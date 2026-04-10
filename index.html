@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Migrañas</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+        }
+        h1 {
+            color: #4a4a8c;
+            text-align: center;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+            margin-top: 20px;
+        }
+        button.main-btn {
+            background-color: #ff66b2; 
+            color: white;
+            border: none;
+            padding: 20px 40px;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(255, 102, 178, 0.4);
+            transition: transform 0.2s, background-color 0.2s;
+            margin-bottom: 30px;
+            width: 100%;
+            font-weight: bold;
+        }
+        button.main-btn:hover:not(:disabled) {
+            background-color: #ff4da6;
+            transform: scale(1.05);
+        }
+        button.main-btn:active:not(:disabled) {
+            transform: scale(0.95);
+        }
+        button.main-btn:disabled {
+            background-color: #cccccc;
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            border-top: 2px solid #f4f4f9;
+            padding-top: 20px;
+        }
+        .stat-box {
+            flex: 1;
+        }
+        .stat-number {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #4a4a8c;
+        }
+        .stat-label {
+            font-size: 0.8rem;
+            color: #777;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        #alert-msg {
+            color: #28a745;
+            font-size: 0.9rem;
+            min-height: 20px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        .history-section {
+            margin-top: 30px;
+            text-align: left;
+            background-color: #fafafa;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #eee;
+        }
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+        .history-header h3 {
+            margin: 0;
+            color: #4a4a8c;
+            font-size: 1.1rem;
+            border: none;
+            padding: 0;
+        }
+        .toggle-btn {
+            background: none;
+            border: none;
+            color: #ff66b2;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 5px 10px;
+            box-shadow: none;
+            width: auto;
+            font-size: 0.9rem;
+            margin: 0;
+            border-radius: 5px;
+        }
+        .toggle-btn:hover {
+            background-color: #ffe6f2;
+        }
+        .history-list {
+            list-style: none;
+            padding: 0;
+            margin: 15px 0 0 0;
+        }
+        .history-list.hidden {
+            display: none;
+        }
+        .history-list li {
+            padding: 8px 0;
+            border-bottom: 1px dashed #ccc;
+            display: flex;
+            justify-content: space-between;
+            color: #555;
+        }
+        .history-list li:last-child {
+            border-bottom: none;
+        }
+        .backup-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+            width: 100%;
+        }
+        .backup-btn {
+            background-color: #4a4a8c;
+            color: white;
+            border: none;
+            padding: 12px;
+            font-size: 0.9rem;
+            border-radius: 10px;
+            cursor: pointer;
+            flex: 1;
+            transition: background-color 0.2s;
+        }
+        .backup-btn:hover {
+            background-color: #3b3b70;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Mi Registro</h1>
+        <p style="color: #666; margin-bottom: 20px;">Registra tu migraña (máximo una vez al día).</p>
+        
+        <div id="alert-msg"></div>
+
+        <button id="log-btn" class="main-btn">Registrar Migraña Hoy</button>
+
+        <div class="stats">
+            <div class="stat-box">
+                <div class="stat-number" id="stat-total">0</div>
+                <div class="stat-label">Total Días</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number" id="stat-week">0</div>
+                <div class="stat-label">Media/Sem</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number" id="stat-month">0</div>
+                <div class="stat-label">Media/Mes</div>
+            </div>
+        </div>
+
+        <div class="history-section">
+            <div class="history-header">
+                <h3>Días por mes</h3>
+                <button id="toggle-history-btn" class="toggle-btn">Ver historial ⬇️</button>
+            </div>
+            <ul class="history-list hidden" id="history-list">
+                </ul>
+        </div>
+
+        <div class="backup-controls">
+            <button id="export-btn" class="backup-btn">⬇️ Guardar Copia</button>
+            <button id="import-btn" class="backup-btn">⬆️ Cargar JSON</button>
+            <input type="file" id="file-input" style="display: none;" accept=".json">
+        </div>
+        
+        <button id="reset-btn" style="background-color: transparent; color: #aaa; box-shadow: none; font-size: 0.8rem; margin-top: 20px; padding: 10px; border: none; cursor: pointer;">Borrar todos los datos</button>
+    </div>
+
+    <script>
+        const btn = document.getElementById('log-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const alertMsg = document.getElementById('alert-msg');
+        
+        const statTotal = document.getElementById('stat-total');
+        const statWeek = document.getElementById('stat-week');
+        const statMonth = document.getElementById('stat-month');
+        
+        const historyList = document.getElementById('history-list');
+        const toggleHistoryBtn = document.getElementById('toggle-history-btn');
+
+        const exportBtn = document.getElementById('export-btn');
+        const importBtn = document.getElementById('import-btn');
+        const fileInput = document.getElementById('file-input');
+
+        const mesesNombres = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+
+        function getTodayString() {
+            const today = new Date();
+            return today.getFullYear() + "-" + 
+                   String(today.getMonth() + 1).padStart(2, '0') + "-" + 
+                   String(today.getDate()).padStart(2, '0');
+        }
+
+        function getRecords() {
+            const data = localStorage.getItem('migraine_records');
+            let records = data ? JSON.parse(data) : [];
+            records = records.map(record => {
+                if (record.includes('T')) {
+                    const d = new Date(record);
+                    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0') + "-" + String(d.getDate()).padStart(2, '0');
+                }
+                return record;
+            });
+            return [...new Set(records)];
+        }
+
+        function saveRecords(records) {
+            localStorage.setItem('migraine_records', JSON.stringify(records));
+        }
+
+        function updateStats() {
+            const records = getRecords();
+            const total = records.length;
+            statTotal.textContent = total;
+
+            const todayStr = getTodayString();
+            
+            if (records.includes(todayStr)) {
+                btn.disabled = true;
+                btn.textContent = "Ya registrado hoy";
+            } else {
+                btn.disabled = false;
+                btn.textContent = "Registrar Migraña Hoy";
+            }
+
+            if (total === 0) {
+                statWeek.textContent = "0";
+                statMonth.textContent = "0";
+                historyList.innerHTML = "<li>Aún no hay datos</li>";
+                return;
+            }
+
+            const firstDate = new Date(records[0]);
+            const now = new Date();
+            const diffTime = Math.abs(now - firstDate);
+            const diffDays = Math.max(Math.ceil(diffTime / (1000 * 60 * 60 * 24)), 1);
+
+            const weeksPassed = Math.max(diffDays / 7, 1);
+            const monthsPassed = Math.max(diffDays / 30.44, 1);
+
+            statWeek.textContent = (total / weeksPassed).toFixed(1);
+            statMonth.textContent = (total / monthsPassed).toFixed(1);
+
+            const historyData = {};
+            records.forEach(dateStr => {
+                const parts = dateStr.split('-');
+                const year = parts[0];
+                const monthIndex = parseInt(parts[1]) - 1;
+                const key = `${mesesNombres[monthIndex]} ${year}`;
+                historyData[key] = (historyData[key] || 0) + 1;
+            });
+
+            historyList.innerHTML = "";
+            const keys = Object.keys(historyData).reverse();
+            keys.forEach(key => {
+                const li = document.createElement('li');
+                const spanMonth = document.createElement('span');
+                spanMonth.innerHTML = `<strong>${key}</strong>`;
+                
+                const spanCount = document.createElement('span');
+                const daysText = historyData[key] === 1 ? 'día' : 'días';
+                spanCount.textContent = `${historyData[key]} ${daysText}`;
+                
+                li.appendChild(spanMonth);
+                li.appendChild(spanCount);
+                historyList.appendChild(li);
+            });
+        }
+
+        // Mostrar/Ocultar Historial
+        toggleHistoryBtn.addEventListener('click', () => {
+            if (historyList.classList.contains('hidden')) {
+                historyList.classList.remove('hidden');
+                toggleHistoryBtn.textContent = 'Ocultar ⬆️';
+            } else {
+                historyList.classList.add('hidden');
+                toggleHistoryBtn.textContent = 'Ver historial ⬇️';
+            }
+        });
+
+        // Registrar
+        btn.addEventListener('click', () => {
+            const records = getRecords();
+            const todayStr = getTodayString();
+            if (!records.includes(todayStr)) {
+                records.push(todayStr);
+                records.sort(); 
+                saveRecords(records);
+                updateStats();
+                alertMsg.style.color = "#28a745";
+                alertMsg.textContent = "Registrado. ¡Mucho ánimo hoy! 🫂";
+                setTimeout(() => { alertMsg.textContent = ""; }, 3000);
+            }
+        });
+
+        // Borrar todo
+        resetBtn.addEventListener('click', () => {
+            if(confirm("¿Estás seguro de que quieres borrar todo tu historial? Haz una copia de seguridad primero si no quieres perderlo para siempre.")) {
+                localStorage.removeItem('migraine_records');
+                updateStats();
+            }
+        });
+
+        // Exportar a JSON
+        exportBtn.addEventListener('click', () => {
+            const records = getRecords();
+            if (records.length === 0) {
+                alert("No hay datos para guardar todavía.");
+                return;
+            }
+            const dataStr = JSON.stringify(records, null, 2);
+            const blob = new Blob([dataStr], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `migranas-backup-${getTodayString()}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+
+        // Importar desde JSON
+        importBtn.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                try {
+                    const importedData = JSON.parse(event.target.result);
+                    if (Array.isArray(importedData)) {
+                        const currentData = getRecords();
+                        const combinedData = [...new Set([...currentData, ...importedData])].sort();
+                        saveRecords(combinedData);
+                        updateStats();
+                        
+                        alertMsg.style.color = "#4a4a8c";
+                        alertMsg.textContent = "¡Copia de seguridad restaurada con éxito!";
+                        setTimeout(() => { alertMsg.textContent = ""; }, 4000);
+                    } else {
+                        alert("El archivo no tiene el formato correcto.");
+                    }
+                } catch (error) {
+                    alert("Error al leer el archivo. Asegúrate de que es el .json correcto.");
+                }
+            };
+            reader.readAsText(file);
+            e.target.value = ''; 
+        });
+
+        // Inicializar
+        updateStats();
+    </script>
+</body>
+</html>
