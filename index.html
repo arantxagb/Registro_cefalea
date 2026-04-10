@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Migrañas</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+        }
+        h1 {
+            color: #4a4a8c;
+            text-align: center;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+            margin-top: 20px;
+        }
+        button {
+            /* Nuevo color rosa */
+            background-color: #ff66b2; 
+            color: white;
+            border: none;
+            padding: 20px 40px;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(255, 102, 178, 0.4);
+            transition: transform 0.2s, background-color 0.2s;
+            margin-bottom: 30px;
+            width: 100%;
+            font-weight: bold;
+        }
+        button:hover:not(:disabled) {
+            background-color: #ff4da6;
+            transform: scale(1.05);
+        }
+        button:active:not(:disabled) {
+            transform: scale(0.95);
+        }
+        button:disabled {
+            background-color: #cccccc;
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            border-top: 2px solid #f4f4f9;
+            padding-top: 20px;
+        }
+        .stat-box {
+            flex: 1;
+        }
+        .stat-number {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #4a4a8c;
+        }
+        .stat-label {
+            font-size: 0.8rem;
+            color: #777;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        #alert-msg {
+            color: #28a745;
+            font-size: 0.9rem;
+            min-height: 20px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        .history-section {
+            margin-top: 30px;
+            text-align: left;
+            background-color: #fafafa;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #eee;
+        }
+        .history-section h3 {
+            margin-top: 0;
+            color: #4a4a8c;
+            font-size: 1.1rem;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+        .history-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .history-list li {
+            padding: 8px 0;
+            border-bottom: 1px dashed #ccc;
+            display: flex;
+            justify-content: space-between;
+            color: #555;
+        }
+        .history-list li:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Mi Registro</h1>
+        <p style="color: #666; margin-bottom: 20px;">Registra tu migraña (máximo una vez al día).</p>
+        
+        <div id="alert-msg"></div>
+
+        <button id="log-btn">Registrar Migraña Hoy</button>
+
+        <div class="stats">
+            <div class="stat-box">
+                <div class="stat-number" id="stat-total">0</div>
+                <div class="stat-label">Total Días</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number" id="stat-week">0</div>
+                <div class="stat-label">Media/Sem</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number" id="stat-month">0</div>
+                <div class="stat-label">Media/Mes</div>
+            </div>
+        </div>
+
+        <div class="history-section">
+            <h3>Días de migraña por mes</h3>
+            <ul class="history-list" id="history-list">
+                </ul>
+        </div>
+        
+        <button id="reset-btn" style="background-color: transparent; color: #aaa; box-shadow: none; font-size: 0.8rem; margin-top: 20px; padding: 10px; width: auto;">Borrar todos los datos</button>
+    </div>
+
+    <script>
+        const btn = document.getElementById('log-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const alertMsg = document.getElementById('alert-msg');
+        
+        const statTotal = document.getElementById('stat-total');
+        const statWeek = document.getElementById('stat-week');
+        const statMonth = document.getElementById('stat-month');
+        const historyList = document.getElementById('history-list');
+
+        const mesesNombres = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+
+        // Obtener la fecha de hoy en formato YYYY-MM-DD
+        function getTodayString() {
+            const today = new Date();
+            return today.getFullYear() + "-" + 
+                   String(today.getMonth() + 1).padStart(2, '0') + "-" + 
+                   String(today.getDate()).padStart(2, '0');
+        }
+
+        // Cargar, migrar datos antiguos y limpiar duplicados
+        function getRecords() {
+            const data = localStorage.getItem('migraine_records');
+            let records = data ? JSON.parse(data) : [];
+            
+            // Convertir datos antiguos al nuevo formato de solo fecha
+            records = records.map(record => {
+                if (record.includes('T')) {
+                    const d = new Date(record);
+                    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0') + "-" + String(d.getDate()).padStart(2, '0');
+                }
+                return record;
+            });
+            
+            // Eliminar duplicados (para asegurar solo 1 por día)
+            return [...new Set(records)];
+        }
+
+        // Guardar datos
+        function saveRecords(records) {
+            localStorage.setItem('migraine_records', JSON.stringify(records));
+        }
+
+        // Calcular estadísticas y actualizar el historial
+        function updateStats() {
+            const records = getRecords();
+            const total = records.length;
+            statTotal.textContent = total;
+
+            const todayStr = getTodayString();
+            
+            // Actualizar estado del botón
+            if (records.includes(todayStr)) {
+                btn.disabled = true;
+                btn.textContent = "Ya registrado hoy";
+            } else {
+                btn.disabled = false;
+                btn.textContent = "Registrar Migraña Hoy";
+            }
+
+            if (total === 0) {
+                statWeek.textContent = "0";
+                statMonth.textContent = "0";
+                historyList.innerHTML = "<li>Aún no hay datos</li>";
+                return;
+            }
+
+            // Calcular Medias
+            const firstDate = new Date(records[0]);
+            const now = new Date();
+            const diffTime = Math.abs(now - firstDate);
+            const diffDays = Math.max(Math.ceil(diffTime / (1000 * 60 * 60 * 24)), 1);
+
+            const weeksPassed = Math.max(diffDays / 7, 1);
+            const monthsPassed = Math.max(diffDays / 30.44, 1);
+
+            statWeek.textContent = (total / weeksPassed).toFixed(1);
+            statMonth.textContent = (total / monthsPassed).toFixed(1);
+
+            // Generar Historial por Meses
+            const historyData = {};
+            records.forEach(dateStr => {
+                const parts = dateStr.split('-');
+                const year = parts[0];
+                const monthIndex = parseInt(parts[1]) - 1;
+                const key = `${mesesNombres[monthIndex]} ${year}`;
+                
+                historyData[key] = (historyData[key] || 0) + 1;
+            });
+
+            // Pintar el historial en la lista (ordenado del más reciente al más antiguo)
+            historyList.innerHTML = "";
+            const keys = Object.keys(historyData).reverse();
+            keys.forEach(key => {
+                const li = document.createElement('li');
+                const spanMonth = document.createElement('span');
+                spanMonth.innerHTML = `<strong>${key}</strong>`;
+                
+                const spanCount = document.createElement('span');
+                const daysText = historyData[key] === 1 ? 'día' : 'días';
+                spanCount.textContent = `${historyData[key]} ${daysText}`;
+                
+                li.appendChild(spanMonth);
+                li.appendChild(spanCount);
+                historyList.appendChild(li);
+            });
+        }
+
+        // Evento al pulsar el botón principal
+        btn.addEventListener('click', () => {
+            const records = getRecords();
+            const todayStr = getTodayString();
+            
+            if (!records.includes(todayStr)) {
+                records.push(todayStr);
+                
+                // Ordenar las fechas cronológicamente por si acaso
+                records.sort(); 
+                saveRecords(records);
+                updateStats();
+                
+                alertMsg.style.color = "#28a745";
+                alertMsg.textContent = "Registrado. ¡Mucho ánimo hoy! 🫂";
+                setTimeout(() => { alertMsg.textContent = ""; }, 3000);
+            }
+        });
+
+        // Evento para borrar datos
+        resetBtn.addEventListener('click', () => {
+            if(confirm("¿Estás seguro de que quieres borrar todo tu historial? Esto no se puede deshacer.")) {
+                localStorage.removeItem('migraine_records');
+                updateStats();
+            }
+        });
+
+        // Inicializar
+        updateStats();
+    </script>
+</body>
+</html>
